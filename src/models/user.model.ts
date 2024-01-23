@@ -1,25 +1,18 @@
-import mongoose, { Document, Schema } from "mongoose";
-import { generateToken, TokenPayload } from "../utils/tokenUtils";
+import mongoose, { Schema } from "mongoose";
 
-// Need to take in separate file
-export interface IUser extends Document {
-  username: string;
-  email: string;
-  password: string;
-  createdAt: Date;
-  tokens: [
-    {
-      token: string;
-    }
-  ];
-  generateAuthToken: () => string;
-}
+import { generateToken } from "../utils/tokenUtils";
+import { hashPassword } from "../utils/passwordUtils";
+
+import { TokenPayload } from "../interfaces/UserInterface";
+import { IUser } from "../interfaces/UserInterface";
+
+import { setCurrentTimestamp } from "../helpers/dateFunction";
 
 const userSchema: Schema<IUser> = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
+  createdAt: { type: Number, default: setCurrentTimestamp },
   tokens: [
     {
       token: {
@@ -30,19 +23,18 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
   ],
 });
 
-// userSchema.pre<IUser>("save", async function (next) {
-//   if (this.isModified("password")) {
-//     try {
-//       const hashedPassword = await hashPassword(this.password);
-//       this.password = hashedPassword;
-//     } catch (error) {
-//       console.log("Getting error while hashing a password", error);
-//       return next(error);
-//     }
-//   }
-
-//   next();
-// });
+userSchema.pre<IUser>("save", async function (next) {
+  if (this.isModified("password")) {
+    try {
+      const hashedPassword = await hashPassword(this.password);
+      this.password = hashedPassword;
+    } catch (error) {
+      console.log("Getting error while hashing a password", error);
+      return next(error);
+    }
+  }
+  next();
+});
 
 // for generating token
 userSchema.methods.generateAuthToken = function (): string {

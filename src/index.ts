@@ -1,19 +1,19 @@
 import express from "express";
 import http from "http";
 import bodyParser from "body-parser";
-// import cookieParser from "cookie-parser";
-// import compression from "compression";
 import cors from "cors";
 import config from "config";
-import connectToDb from "./utils/connectToDb";
-import { seedUsers } from "./seeds/seed-users";
+
 import router from "./routes";
 
+// To connect with database
+import connectToDb from "./utils/connectToDb";
 connectToDb();
 
-const app = express();
-
+import { seedUsers } from "./seeds/seed-users";
 seedUsers();
+
+const app = express();
 
 app.use(
   cors({
@@ -21,8 +21,6 @@ app.use(
   })
 );
 
-// app.use(compression());
-// app.use(cookieParser());
 app.use(
   bodyParser.urlencoded({
     extended: true,
@@ -30,6 +28,7 @@ app.use(
 );
 app.use(bodyParser.json());
 
+// version v1
 app.use("/v1", router);
 
 const server = http.createServer(app);

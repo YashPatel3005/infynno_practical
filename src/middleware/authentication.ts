@@ -4,7 +4,7 @@ import constants from "../../config/constants";
 import config from "config";
 import User from "../models/user.model";
 
-const secretKey = config.get<string>("jwt_secret");
+const secretKey = config.get<string>("jwtSecret");
 
 interface IJwtPayload {
   userId: string;
@@ -63,7 +63,7 @@ export const authenticateToken = async (
       });
     }
 
-    res.status(500).send({
+    return res.status(500).send({
       status: constants.STATUS_CODE.FAIL,
       message: "Something went wrong",
       error: true,

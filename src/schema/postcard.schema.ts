@@ -1,4 +1,4 @@
-import { object, string, TypeOf } from "zod";
+import { object, string } from "zod";
 
 export const createPostCardSchema = object({
   body: object({
@@ -26,5 +26,3 @@ export const createPostCardSchema = object({
     // }),
   }),
 });
-
-// export type createPostCardSchema = TypeOf<typeof createPostCardSchema>["body"];

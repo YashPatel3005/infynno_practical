@@ -1,7 +1,10 @@
-import User from "../models/user.model";
 import config from "config";
+
+import User from "../models/user.model";
+
 import { hashPassword } from "../utils/passwordUtils";
-import { IUser } from "../models/user.model";
+
+import { IUser } from "../interfaces/UserInterface";
 
 export const seedUsers = async () => {
   try {

@@ -1,9 +1,29 @@
 import { Request, Response } from "express";
+
+import { SortOrder } from "mongoose";
+
 import { v4 as uuidv4 } from "uuid";
+
 import constants from "../../config/constants";
-import { Postcard, IPostcard } from "../models/postcard.model";
+
+import Postcard from "../models/postcard.model";
+
 import { IRequest } from "../middleware/authentication";
 
+import { IPostcard } from "../interfaces/PostCardInterface";
+
+import {
+  setCurrentTimestamp,
+  addTimeToCurrentTimestamp,
+} from "../helpers/dateFunction";
+
+/**
+ * Create a new Postcard
+ *
+ * @body recipient, street1, street2, city, state, zipCode, message
+ *
+ * @returns { savedPostcard }
+ */
 const createPostCardHandler = async (req: IRequest, res: Response) => {
   const { recipient, street1, street2, city, state, zipCode, message } =
     req.body;
@@ -20,9 +40,9 @@ const createPostCardHandler = async (req: IRequest, res: Response) => {
 
     const userId: { _id?: string } = req.user;
 
-    const previewLinkId = uuidv4();
+    const previewLinkId: string = uuidv4();
 
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    const expiresAt: Number = addTimeToCurrentTimestamp(1, "hour");
 
     const postcard: IPostcard = new Postcard({
       recipient,
@@ -32,7 +52,6 @@ const createPostCardHandler = async (req: IRequest, res: Response) => {
       state,
       zipCode,
       message,
-      //   backgroundImage: `http://localhost:3000/${req.file.path}`,
       backgroundImage: req.file.path,
       userId: userId._id.toString(),
       previewLink: `http://localhost:3000/v1/api/postcard/previewLink/${previewLinkId}`,
@@ -59,21 +78,29 @@ const createPostCardHandler = async (req: IRequest, res: Response) => {
   }
 };
 
+/**
+ * Get lists of Postcards
+ *
+ * @query q, page, limit
+ *
+ * @returns { postcards, page, limit, total }
+ */
 const postCardListHandler = async (req: IRequest, res: Response) => {
   try {
     const userId: { _id?: string } = req.user;
 
     const search = req.query.q ? req.query.q : "";
-    const sortBy: string = req.query.sortBy as string;
 
-    // let field: string, value: number;
-    // if (sortBy) {
-    //   const parts: string[] = sortBy.split(":");
-    //   field = parts[0];
-    //   parts[1] === "desc" ? (value = -1) : (value = 1);
-    // } else {
-    //   (field = "createdAt"), (value = 1);
-    // }
+    const sortBy = req.query.sortBy as string;
+
+    let field: string, value: SortOrder;
+    if (sortBy) {
+      const parts: string[] = sortBy.split(":");
+      field = parts[0];
+      parts[1] === "desc" ? (value = -1) : (value = 1);
+    } else {
+      (field = "createdAt"), (value = 1);
+    }
 
     const pageOptions = {
       page: parseInt(req.query.page as string) || constants.PAGE,
@@ -87,8 +114,9 @@ const postCardListHandler = async (req: IRequest, res: Response) => {
       : {};
 
     let total = await Postcard.countDocuments({ userId, ...query });
+
     let postcards = await Postcard.find({ userId, ...query })
-      //   .sort({ [field]: value })
+      .sort({ [field]: value })
       .skip((pageOptions.page - 1) * pageOptions.limit)
       .limit(pageOptions.limit)
       .collation({ locale: "en" });
@@ -113,12 +141,18 @@ const postCardListHandler = async (req: IRequest, res: Response) => {
   }
 };
 
+/**
+ * Preview Postcard
+ *
+ * @params previewLinkId
+ *
+ * @returns { postcard }
+ */
 const previewPostcardHandler = async (req: Request, res: Response) => {
   try {
     const { previewLinkId } = req.params;
 
-    const postcard = await Postcard.findOne({ previewLinkId });
-    console.log("postcard", postcard);
+    const postcard: IPostcard = await Postcard.findOne({ previewLinkId });
 
     if (!postcard) {
       return res.status(404).send({
@@ -130,7 +164,8 @@ const previewPostcardHandler = async (req: Request, res: Response) => {
     }
 
     // Check if the link has expired
-    if (postcard.expiresAt < new Date()) {
+    const currentTimestamp: Number = setCurrentTimestamp();
+    if (postcard.expiresAt < currentTimestamp) {
       return res.status(403).send({
         status: constants.STATUS_CODE.FAIL,
         message: "Postcard link has expired",

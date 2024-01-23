@@ -1,4 +1,4 @@
-import { object, string, TypeOf } from "zod";
+import { object, string } from "zod";
 
 export const loginUserSchema = object({
   body: object({
@@ -10,5 +10,3 @@ export const loginUserSchema = object({
     }).min(6, "Password is too short - should be min 6 chars"),
   }),
 });
-
-// export type loginUserSchema = TypeOf<typeof loginUserSchema>["body"];

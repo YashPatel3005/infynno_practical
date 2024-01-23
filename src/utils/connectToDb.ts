@@ -4,7 +4,6 @@ import config from "config";
 async function connectToDb() {
   const dbUri = config.get<string>("dbUri");
 
-  //database configuration
   mongoose.connect(dbUri);
 
   mongoose.connection.on("connected", function () {

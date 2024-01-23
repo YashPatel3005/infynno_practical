@@ -1,8 +1,18 @@
 import { Request, Response } from "express";
+
 import User from "../models/user.model";
+
 import constants from "../../config/constants";
+
 import { comparePasswords } from "../utils/passwordUtils";
 
+/**
+ * Login a user
+ *
+ * @body email, password
+ *
+ * @returns {user , token}
+ */
 const userLoginHandler = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -18,7 +28,10 @@ const userLoginHandler = async (req: Request, res: Response) => {
       });
     }
 
-    const isPasswordValid = await comparePasswords(password, user.password);
+    const isPasswordValid: boolean = await comparePasswords(
+      password,
+      user.password
+    );
 
     if (!isPasswordValid) {
       return res.status(404).send({
@@ -29,8 +42,7 @@ const userLoginHandler = async (req: Request, res: Response) => {
       });
     }
 
-    const token = await user.generateAuthToken();
-    console.log("token", token);
+    const token: string = await user.generateAuthToken();
 
     //Store token to db
     user.tokens.push({
